@@ -287,6 +287,12 @@ function MainView({ nick, onEnterRoom, onCreated, onChangeNick, initialView }) {
   const [selectedDate, setSelectedDate] = useState(null);
   const [dateRooms, setDateRooms] = useState([]);
   const [loadingDate, setLoadingDate] = useState(false);
+  const [totalRooms, setTotalRooms] = useState(null);
+
+  useEffect(() => {
+    supabase.from("events").select("id", { count: "exact", head: true })
+      .then(({ count }) => setTotalRooms(count || 0));
+  }, []);
 
   // Create state
   const [title, setTitle] = useState("");
@@ -320,7 +326,7 @@ function MainView({ nick, onEnterRoom, onCreated, onChangeNick, initialView }) {
     const id = genId();
     const ok = await createEvent({ id, title:title.trim(), dates:selDates,
       hours:Array.from({length:endH-startH},(_,i)=>startH+i), participants:{}, webhook:webhook.trim() });
-    if (ok) { onCreated(id); }
+    if (ok) { setTotalRooms(n => (n||0) + 1); onCreated(id); }
     else { setErr("생성 실패. Supabase 연결을 확인해주세요."); setCreating(false); }
   };
 
@@ -349,7 +355,9 @@ function MainView({ nick, onEnterRoom, onCreated, onChangeNick, initialView }) {
         <div className="header-right">
           <div className="view-toggle">
             <button className={`vt-btn${view==="create"?" active":""}`} onClick={()=>setView("create")}>✚ 방 만들기</button>
-            <button className={`vt-btn${view==="calendar"?" active":""}`} onClick={()=>setView("calendar")}>📅 캘린더</button>
+            <button className={`vt-btn${view==="calendar"?" active":""}`} onClick={()=>setView("calendar")}>
+              📅 캘린더{totalRooms > 0 && <span style={{marginLeft:".3rem",background:"var(--green)",color:"#000",borderRadius:"10px",padding:"0 .4rem",fontSize:".6rem",fontWeight:"bold"}}>{totalRooms}</span>}
+            </button>
           </div>
           <div className="nick-badge" onClick={onChangeNick}>
             <span className="nick-dot"/><span>{nick}</span>
