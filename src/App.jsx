@@ -20,6 +20,11 @@ function dateRangeLabel(dates) {
 function getDaysInMonth(y, m) { return new Date(y, m, 0).getDate(); }
 function getFirstDayOfMonth(y, m) { return new Date(y, m-1, 1).getDay(); }
 function toDateStr(y, m, d) { return `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`; }
+function getDeviceId() {
+  let id = localStorage.getItem("gp_device_id");
+  if (!id) { id = genId() + genId(); localStorage.setItem("gp_device_id", id); }
+  return id;
+}
 
 // ─── Supabase ─────────────────────────────────────────────────────────────────
 async function loadEvent(id) {
@@ -345,7 +350,7 @@ function MainView({ nick, onEnterRoom, onCreated, onChangeNick, initialView }) {
     setErr(""); setCreating(true);
     const id = genId();
     const ok = await createEvent({ id, title:title.trim(), dates:selDates,
-      hours:Array.from({length:endH-startH},(_,i)=>startH+i), participants:{}, webhook:webhook.trim(), created_by:nick });
+      hours:Array.from({length:endH-startH},(_,i)=>startH+i), participants:{}, webhook:webhook.trim(), created_by:getDeviceId() });
     if (ok) { setTotalRooms(n => (n||0) + 1); onCreated(id); }
     else { setErr("생성 실패. Supabase 연결을 확인해주세요."); setCreating(false); }
   };
@@ -602,7 +607,7 @@ function EventRoom({ eventId, nick, onBack }) {
   if (!event) return <div className="center-msg">LOADING...</div>;
 
   const {dates,hours,participants,title}=event;
-  const isCreator = nick && event.created_by === nick;
+  const isCreator = event.created_by === getDeviceId();
   const pNames=Object.keys(participants||{}); const total=pNames.length;
   const totalPages=Math.ceil((dates?.length||0)/PAGE_SIZE);
   const heatDates=(dates||[]).slice(heatPage*PAGE_SIZE,(heatPage+1)*PAGE_SIZE);
