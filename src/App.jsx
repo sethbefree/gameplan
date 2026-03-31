@@ -34,6 +34,10 @@ async function updateParticipants(eventId, participants) {
   const { error } = await supabase.from("events").update({ participants }).eq("id", eventId);
   return !error;
 }
+async function updateHours(eventId, hours) {
+  const { error } = await supabase.from("events").update({ hours }).eq("id", eventId);
+  return !error;
+}
 async function loadChats(eventId) {
   const { data } = await supabase.from("chats").select("*").eq("event_id", eventId).order("created_at", { ascending: true });
   return data || [];
@@ -575,6 +579,18 @@ function EventRoom({ eventId, nick, onBack }) {
     const ok = await deleteEvent(eventId);
     if (ok) onBack();
   };
+  const handleAddHour = async (direction) => {
+    if (!isCreator) return;
+    const cur = event.hours || [];
+    const min = Math.min(...cur);
+    const max = Math.max(...cur);
+    let newHours;
+    if (direction === "before" && min > 0) newHours = [min-1, ...cur];
+    else if (direction === "after" && max < 23) newHours = [...cur, max+1];
+    else return;
+    const ok = await updateHours(eventId, newHours);
+    if (ok) setEvent(e => ({...e, hours: newHours}));
+  };
 
   if (notFound) return <div className="no-event">
     <div>// 이벤트를 찾을 수 없습니다</div>
@@ -629,7 +645,7 @@ function EventRoom({ eventId, nick, onBack }) {
                 : pNames.map(n=>(
                   <div key={n} className={`p-tag${n===myName?" p-me":""}`}>
                     <span className="p-dot" style={{background:n===myName?"var(--green)":"var(--purple)",boxShadow:n===myName?"0 0 6px var(--green)":"0 0 6px var(--purple)"}}/>
-                    <span>{n}</span><span className="p-count">{participants[n]?.length??0}칸</span>
+                    <span>{n}</span><span className="p-count">{participants[n]?.length??0}시간</span>
                   </div>
                 ))
               }
@@ -639,7 +655,21 @@ function EventRoom({ eventId, nick, onBack }) {
             <div>
               <div className="s-title">내 가능 시간</div>
               <div className="hint" style={{marginBottom:".75rem"}}>클릭으로 선택 · 지난 날짜는 수정 불가</div>
+              {isCreator && hours[0] > 0 && (
+                <button onClick={()=>handleAddHour("before")} style={{width:"100%",padding:".3rem",background:"transparent",border:"1px dashed var(--muted)",color:"var(--muted)",fontFamily:"inherit",fontSize:".65rem",borderRadius:"4px",cursor:"pointer",marginBottom:"4px",transition:"all .2s"}}
+                  onMouseOver={e=>{e.target.style.borderColor="var(--green)";e.target.style.color="var(--green)"}}
+                  onMouseOut={e=>{e.target.style.borderColor="var(--muted)";e.target.style.color="var(--muted)"}}>
+                  + {fmtHour(hours[0]-1)} 앞에 추가
+                </button>
+              )}
               <GridTable useDates={dates} hours={hours} mySlots={mySlots} participants={participants} pNames={pNames} total={total} onCellClick={toggleSlot} isMine={true}/>
+              {isCreator && hours[hours.length-1] < 23 && (
+                <button onClick={()=>handleAddHour("after")} style={{width:"100%",padding:".3rem",background:"transparent",border:"1px dashed var(--muted)",color:"var(--muted)",fontFamily:"inherit",fontSize:".65rem",borderRadius:"4px",cursor:"pointer",marginTop:"4px",transition:"all .2s"}}
+                  onMouseOver={e=>{e.target.style.borderColor="var(--green)";e.target.style.color="var(--green)"}}
+                  onMouseOut={e=>{e.target.style.borderColor="var(--muted)";e.target.style.color="var(--muted)"}}>
+                  + {fmtHour(hours[hours.length-1]+1)} 뒤에 추가
+                </button>
+              )}
               <button className={`btn-save${saved?" saved":""}`} onClick={saveAvailability} disabled={saving} style={{marginTop:".75rem"}}>
                 {saving?"SAVING...":saved?"저장됨 ✓":"가능 시간 저장"}
               </button>
