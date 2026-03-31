@@ -60,6 +60,10 @@ async function loadRoomMapForMonth(year, month) {
   });
   return map;
 }
+async function deleteEvent(eventId) {
+  const { error } = await supabase.from("events").delete().eq("id", eventId);
+  return !error;
+}
 async function notifyDiscord(webhookUrl, eventTitle, name, action, slotCount) {
   if (!webhookUrl) return;
   try {
@@ -333,7 +337,7 @@ function MainView({ nick, onEnterRoom, onCreated, onChangeNick, initialView }) {
     setErr(""); setCreating(true);
     const id = genId();
     const ok = await createEvent({ id, title:title.trim(), dates:selDates,
-      hours:Array.from({length:endH-startH},(_,i)=>startH+i), participants:{}, webhook:webhook.trim() });
+      hours:Array.from({length:endH-startH},(_,i)=>startH+i), participants:{}, webhook:webhook.trim(), created_by:nick });
     if (ok) { setTotalRooms(n => (n||0) + 1); onCreated(id); }
     else { setErr("생성 실패. Supabase 연결을 확인해주세요."); setCreating(false); }
   };
@@ -566,6 +570,11 @@ function EventRoom({ eventId, nick, onBack }) {
   const copyLink = () => {
     navigator.clipboard.writeText(window.location.href).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});
   };
+  const handleDelete = async () => {
+    if (!window.confirm(`"${event?.title}" 방을 삭제할까요? 복구할 수 없어요.`)) return;
+    const ok = await deleteEvent(eventId);
+    if (ok) onBack();
+  };
 
   if (notFound) return <div className="no-event">
     <div>// 이벤트를 찾을 수 없습니다</div>
@@ -573,6 +582,7 @@ function EventRoom({ eventId, nick, onBack }) {
   if (!event) return <div className="center-msg">LOADING...</div>;
 
   const {dates,hours,participants,title}=event;
+  const isCreator = nick && event.created_by === nick;
   const pNames=Object.keys(participants||{}); const total=pNames.length;
   const totalPages=Math.ceil((dates?.length||0)/PAGE_SIZE);
   const heatDates=(dates||[]).slice(heatPage*PAGE_SIZE,(heatPage+1)*PAGE_SIZE);
@@ -587,6 +597,11 @@ function EventRoom({ eventId, nick, onBack }) {
         </div>
         <div style={{display:"flex",gap:".5rem",alignItems:"center"}}>
           <span style={{fontSize:".72rem",color:"var(--muted)"}}>{total}명 참가</span>
+          {isCreator && (
+            <button onClick={handleDelete} style={{padding:".35rem .9rem",background:"transparent",border:"1px solid #ff4466",color:"#ff4466",fontFamily:"inherit",fontSize:".7rem",borderRadius:"4px",cursor:"pointer",letterSpacing:".08em",transition:"all .2s"}}>
+              방 삭제
+            </button>
+          )}
           <button className={`btn-share${copied?" copied":""}`} onClick={copyLink}>{copied?"COPIED ✓":"링크 복사"}</button>
         </div>
       </div>
