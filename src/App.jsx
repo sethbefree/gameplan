@@ -123,19 +123,19 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
 .discord-wrap{border:1px solid #1e1e38;border-radius:8px;padding:1rem;background:#090914}
 .discord-label{font-size:.7rem;color:#6d5adb;letter-spacing:.1em;margin-bottom:.5rem;display:block}.discord-hint{font-size:.65rem;color:var(--muted);margin-top:.4rem}
 
-.cal-view{padding:1rem 1.5rem;flex:1}
-.cal-nav{display:flex;align-items:center;gap:1rem;margin-bottom:1rem}
-.cal-month{font-family:'Orbitron',monospace;font-size:.9rem;color:var(--text);letter-spacing:.05em}
-.cal-nav-btn{padding:.3rem .7rem;background:transparent;border:1px solid var(--border);color:var(--muted);font-family:inherit;font-size:.75rem;border-radius:4px;cursor:pointer;transition:all .2s}.cal-nav-btn:hover{border-color:var(--green);color:var(--green)}
-.cal-days-header{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
-.cal-day-label{text-align:center;font-size:.65rem;color:var(--muted);padding:.3rem 0;letter-spacing:.05em}
+.cal-view{padding:.75rem 1.25rem;flex:1;max-width:520px;margin:0 auto;width:100%}
+.cal-nav{display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem}
+.cal-month{font-family:'Orbitron',monospace;font-size:.85rem;color:var(--text);letter-spacing:.05em}
+.cal-nav-btn{padding:.2rem .55rem;background:transparent;border:1px solid var(--border);color:var(--muted);font-family:inherit;font-size:.7rem;border-radius:4px;cursor:pointer;transition:all .2s}.cal-nav-btn:hover{border-color:var(--green);color:var(--green)}
+.cal-days-header{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:3px}
+.cal-day-label{text-align:center;font-size:.6rem;color:var(--muted);padding:.2rem 0;letter-spacing:.05em}
 .cal-day-label.sun{color:#ff6b6b}.cal-day-label.sat{color:#7c5ce0}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-.cal-cell{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;transition:all .15s;border:1px solid transparent;gap:3px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-cell{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:6px;cursor:pointer;transition:all .15s;border:1px solid transparent;gap:2px}
 .cal-cell:hover{background:var(--bg3);border-color:var(--border)}.cal-cell.today{border-color:var(--green)!important;background:var(--green-dim)}.cal-cell.has-rooms{background:var(--bg3);border-color:#1a2a40}.cal-cell.has-rooms:hover{border-color:var(--green)}.cal-cell.past{opacity:.4}.cal-cell.empty{cursor:default;pointer-events:none}
-.cal-date{font-size:.82rem;color:var(--text);line-height:1}.cal-cell.today .cal-date{color:var(--green);font-weight:bold}.cal-cell.sun .cal-date{color:#ff6b6b}.cal-cell.sat .cal-date{color:#7c5ce0}
+.cal-date{font-size:.78rem;color:var(--text);line-height:1}.cal-cell.today .cal-date{color:var(--green);font-weight:bold}.cal-cell.sun .cal-date{color:#ff6b6b}.cal-cell.sat .cal-date{color:#7c5ce0}
 .cal-rooms-dot{display:flex;gap:2px;align-items:center}
-.room-dot{width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 4px var(--green)}.room-dot.d2{background:#7c3aed;box-shadow:0 0 4px #7c3aed}.room-dot.d3{background:#00aaff;box-shadow:0 0 4px #00aaff}
+.room-dot{width:4px;height:4px;border-radius:50%;background:var(--green);box-shadow:0 0 3px var(--green)}.room-dot.d2{background:#7c3aed;box-shadow:0 0 3px #7c3aed}.room-dot.d3{background:#00aaff;box-shadow:0 0 3px #00aaff}
 
 .date-panel{position:fixed;inset:0;background:#000000aa;z-index:200;display:flex;align-items:flex-end;justify-content:center}
 .date-panel-inner{width:100%;max-width:560px;background:var(--bg2);border-radius:16px 16px 0 0;border:1px solid var(--border);border-bottom:none;max-height:80vh;display:flex;flex-direction:column}
@@ -288,10 +288,18 @@ function MainView({ nick, onEnterRoom, onCreated, onChangeNick, initialView }) {
   const [dateRooms, setDateRooms] = useState([]);
   const [loadingDate, setLoadingDate] = useState(false);
   const [totalRooms, setTotalRooms] = useState(null);
+  const [createDateMap, setCreateDateMap] = useState({});
 
   useEffect(() => {
     supabase.from("events").select("id", { count: "exact", head: true })
       .then(({ count }) => setTotalRooms(count || 0));
+    // 날짜 버튼용 전체 방 날짜 맵
+    supabase.from("events").select("dates").then(({ data }) => {
+      if (!data) return;
+      const map = {};
+      data.forEach(e => (e.dates||[]).forEach(d => { map[d] = (map[d]||0) + 1; }));
+      setCreateDateMap(map);
+    });
   }, []);
 
   // Create state
@@ -393,9 +401,20 @@ function MainView({ nick, onEnterRoom, onCreated, onChangeNick, initialView }) {
               <div className="days-grid">
                 {dayItems.map(item => item.type==="sep"
                   ? <div key={item.key} className="month-sep">{item.month}월</div>
-                  : (() => { const {month:m,date,day}=fmtDate(item.date); const isW=["토","일"].includes(day); const isSel=selDates.includes(item.date);
-                      return <button key={item.key} className={`day-btn${isSel?" sel":""}${isW&&!isSel?" weekend":""}`} onClick={()=>toggleDate(item.date)}>
-                        <span className="dm">{m}/{date}</span><span>{day}</span></button>; })()
+                  : (() => {
+                      const {month:m,date,day}=fmtDate(item.date);
+                      const isW=["토","일"].includes(day);
+                      const isSel=selDates.includes(item.date);
+                      const hasRoom = createDateMap[item.date] > 0;
+                      return (
+                        <button key={item.key} className={`day-btn${isSel?" sel":""}${isW&&!isSel?" weekend":""}`} onClick={()=>toggleDate(item.date)}>
+                          <span className="dm">{m}/{date}</span>
+                          <span>{day}</span>
+                          {hasRoom && !isSel && <span style={{width:"4px",height:"4px",borderRadius:"50%",background:"var(--green)",boxShadow:"0 0 4px var(--green)",marginTop:"1px"}} />}
+                          {hasRoom && isSel && <span style={{width:"4px",height:"4px",borderRadius:"50%",background:"#000",marginTop:"1px"}} />}
+                        </button>
+                      );
+                    })()
                 )}
               </div>
             </div>
