@@ -8,7 +8,7 @@ function fmtDate(s) {
   const d = new Date(s + "T12:00:00");
   return { month: d.getMonth()+1, date: d.getDate(), day: DAYS[d.getDay()] };
 }
-function fmtHour(h) { return `${String(h).padStart(2,"0")}:00`; }
+function fmtHour(h) { return h === 24 ? "24:00" : `${String(h).padStart(2,"0")}:00`; }
 function fmtTime(ts) { const d = new Date(ts); return `${d.getHours()}:${String(d.getMinutes()).padStart(2,"0")}`; }
 function getOffsetDay(n) { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0,10); }
 function isPast(s) { const t = new Date(); t.setHours(0,0,0,0); return new Date(s + "T00:00:00") < t; }
@@ -443,7 +443,7 @@ function MainView({ nick, onEnterRoom, onCreated, onChangeNick, initialView }) {
                   {hours.slice(0,23).map(h=><option key={h} value={h}>{fmtHour(h)}</option>)}</select>
                 <span className="time-sep">~</span>
                 <select className="c-select" value={endH} onChange={e=>setEndH(+e.target.value)}>
-                  {hours.slice(1).map(h=><option key={h} value={h}>{fmtHour(h)}</option>)}</select>
+                  {[...hours.slice(1), 24].map(h=><option key={h} value={h}>{fmtHour(h)}</option>)}</select>
               </div>
             </div>
 
@@ -595,7 +595,7 @@ function EventRoom({ eventId, nick, onBack }) {
     const max = Math.max(...cur);
     let newHours;
     if (direction === "before" && min > 0) newHours = [min-1, ...cur];
-    else if (direction === "after" && max < 23) newHours = [...cur, max+1];
+    else if (direction === "after" && max < 24) newHours = [...cur, max+1];
     else return;
     const ok = await updateHours(eventId, newHours);
     if (ok) setEvent(e => ({...e, hours: newHours}));
@@ -689,7 +689,7 @@ function EventRoom({ eventId, nick, onBack }) {
                     )}
                     <PagNav page={minePage} setPage={setMinePage} totalPages={totalPages} visibleDates={mineDates}/>
                     <GridTable useDates={mineDates} hours={hours} mySlots={mySlots} participants={participants} pNames={pNames} total={total} onCellClick={toggleSlot} isMine={true}/>
-                    {isCreator && hours[hours.length-1] < 23 && (
+                    {isCreator && hours[hours.length-1] < 24 && (
                       <button onClick={()=>handleAddHour("after")} className="add-hour-btn" style={{marginTop:"4px"}}>
                         + {fmtHour(hours[hours.length-1]+1)} 뒤에 추가
                       </button>
