@@ -212,11 +212,11 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
 .chat-msgs{max-height:200px;overflow-y:auto;padding:.75rem 1.25rem;display:flex;flex-direction:column;gap:.5rem}.chat-msg{font-size:.78rem;line-height:1.5}.chat-msg .au{color:var(--green);margin-right:.4rem}.chat-msg .tm{color:var(--muted);font-size:.65rem;margin-left:.3rem}
 .chat-row{display:flex;border-top:1px solid var(--border)}.chat-in{flex:1;background:var(--bg3);border:none;border-right:1px solid var(--border);padding:.6rem 1rem;color:var(--text);font-family:inherit;font-size:.8rem;outline:none}.chat-in:focus{background:#0f0f22}
 .btn-send{padding:.6rem 1.25rem;background:var(--green);color:#000;font-family:'Orbitron',monospace;font-size:.65rem;font-weight:700;border:none;cursor:pointer;transition:all .2s}.btn-send:hover{box-shadow:0 0 12px var(--green)}
-.cell-popup{background:var(--bg2);border:1px solid var(--green);border-radius:8px;padding:.75rem 1rem;margin-bottom:.75rem;min-width:160px}
+.cell-popup{background:var(--bg2);border:1px solid var(--green);border-radius:8px;padding:.75rem 1rem;margin-bottom:.75rem;cursor:pointer;box-shadow:0 0 20px #00ff8820}
 .cell-popup-header{font-size:.72rem;color:var(--green);font-family:'Orbitron',monospace;letter-spacing:.06em;margin-bottom:.6rem;padding-bottom:.5rem;border-bottom:1px solid var(--border)}
-.cell-popup-name{display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:var(--text);padding:.2rem 0}
-.cell-popup-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 4px var(--green);flex-shrink:0}
-.cell-popup-empty{font-size:.72rem;color:var(--muted);padding:.2rem 0}
+.cell-popup-name{display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:var(--text);padding:.25rem 0}
+.cell-popup-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green);flex-shrink:0}
+.cell-popup-empty{font-size:.75rem;color:var(--muted);padding:.2rem 0}
 .cell-popup-total{font-size:.65rem;color:var(--muted);margin-top:.5rem;padding-top:.4rem;border-top:1px solid var(--border)}
 .ad-slot{width:100%;height:50px;background:transparent;border:1px dashed #1a2a40;border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .ad-label{font-size:.6rem;color:#1a2a40;letter-spacing:.15em;font-family:'Orbitron',monospace}
@@ -234,7 +234,7 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
 
 // ─── Grid Table ───────────────────────────────────────────────────────────────
 function GridTable({ useDates, hours, mySlots, participants, pNames, total, onCellClick, isMine }) {
-  const [popup, setPopup] = useState(null); // {date, hour, names}
+  const [popup, setPopup] = useState(null);
   const heatVal = (date, hour) => pNames.filter(n => participants[n]?.includes(slotId(date, hour))).length;
   const heatColor = v => {
     if (v === 0 || total === 0) return "var(--bg3)";
@@ -244,9 +244,9 @@ function GridTable({ useDates, hours, mySlots, participants, pNames, total, onCe
     return `rgba(0,255,136,${0.55+r*0.4})`;
   };
   return (
-    <div className="grid-scroll" onClick={e => { if (e.target.closest(".cell-popup")) return; setPopup(null); }}>
+    <div>
       {popup && (
-        <div className="cell-popup">
+        <div className="cell-popup" onClick={()=>setPopup(null)}>
           <div className="cell-popup-header">
             {fmtDate(popup.date).month}/{fmtDate(popup.date).date} ({fmtDate(popup.date).day}) {fmtHour(popup.hour)}
           </div>
@@ -254,15 +254,15 @@ function GridTable({ useDates, hours, mySlots, participants, pNames, total, onCe
             ? <div className="cell-popup-empty">가능한 사람 없음</div>
             : popup.names.map(n => (
               <div key={n} className="cell-popup-name">
-                <span className="cell-popup-dot" />
-                {n}
+                <span className="cell-popup-dot" />{n}
               </div>
             ))
           }
-          <div className="cell-popup-total">{popup.names.length} / {total}명 가능</div>
+          <div className="cell-popup-total">{popup.names.length} / {total}명 가능 · 탭해서 닫기</div>
         </div>
       )}
-      <table className="g-table">
+      <div className="grid-scroll">
+        <table className="g-table">
         <thead><tr>
           <th className="g-th" />
           {useDates.map((d,i) => {
@@ -296,6 +296,7 @@ function GridTable({ useDates, hours, mySlots, participants, pNames, total, onCe
           ))}
         </tbody>
       </table>
+    </div>
     </div>
   );
 }
