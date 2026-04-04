@@ -368,6 +368,7 @@ function MainView({ nick, onEnterRoom, onCreated, onChangeNick, initialView }) {
   const [startH, setStartH] = useState(18);
   const [endH, setEndH] = useState(23);
   const [webhook, setWebhook] = useState("");
+  const [maxMembers, setMaxMembers] = useState(0); // 0 = 제한없음
   const [creating, setCreating] = useState(false);
   const [err, setErr] = useState("");
 
@@ -392,7 +393,7 @@ function MainView({ nick, onEnterRoom, onCreated, onChangeNick, initialView }) {
     setErr(""); setCreating(true);
     const id = genId();
     const ok = await createEvent({ id, title:title.trim(), dates:selDates,
-      hours:Array.from({length:endH-startH},(_,i)=>startH+i), participants:{}, webhook:webhook.trim(), created_by:getDeviceId() });
+      hours:Array.from({length:endH-startH},(_,i)=>startH+i), participants:{}, webhook:webhook.trim(), created_by:getDeviceId(), max_members: maxMembers });
     if (ok) { setTotalRooms(n => (n||0) + 1); saveRoomToHistory(id, title.trim()); setMyRooms(getRoomHistory()); onCreated(id); }
     else { setErr("생성 실패. Supabase 연결을 확인해주세요."); setCreating(false); }
   };
@@ -513,6 +514,17 @@ function MainView({ nick, onEnterRoom, onCreated, onChangeNick, initialView }) {
                 <span className="time-sep">~</span>
                 <select className="c-select" value={endH} onChange={e=>setEndH(+e.target.value)}>
                   {[...hours.slice(1), 24].map(h=><option key={h} value={h}>{fmtHour(h)}</option>)}</select>
+              </div>
+            </div>
+
+            <div className="c-field">
+              <label className="c-label">최대 인원 (0 = 제한없음)</label>
+              <div style={{display:"flex",alignItems:"center",gap:".75rem"}}>
+                <input type="number" min="0" max="100" className="c-input" style={{width:"100px"}}
+                  value={maxMembers} onChange={e=>setMaxMembers(Math.max(0,+e.target.value))} />
+                <span style={{fontSize:".75rem",color:"var(--muted)"}}>
+                  {maxMembers===0 ? "인원 제한 없음" : `최대 ${maxMembers}명`}
+                </span>
               </div>
             </div>
 
@@ -647,7 +659,13 @@ function EventRoom({ eventId, nick, onBack }) {
   }, [event?.id]);
 
   const enterName = async () => {
-    const n=nameInput.trim(); if(!n) return; setMyName(n);
+    const n=nameInput.trim(); if(!n) return;
+    // 최대 인원 체크
+    const maxM = event?.max_members || 0;
+    if (maxM > 0 && Object.keys(event?.participants||{}).length >= maxM && !event?.participants?.[n]) {
+      return alert(`최대 인원(${maxM}명)에 도달했어요.`);
+    }
+    setMyName(n);
     if (event?.participants?.[n]) setMySlots(new Set(event.participants[n]));
     await notifyDiscord(event?.webhook,event?.title,n,"join",0);
     saveRoomToHistory(eventId, event?.title || "");
@@ -723,7 +741,9 @@ function EventRoom({ eventId, nick, onBack }) {
           <span className="live-dot"/>{title}
         </div>
         <div style={{display:"flex",gap:".5rem",alignItems:"center"}}>
-          <span style={{fontSize:".72rem",color:"var(--muted)"}}>{total}명 참가</span>
+          <span style={{fontSize:".72rem",color:"var(--muted)"}}>
+            {total}명{event?.max_members > 0 ? ` / ${event.max_members}명` : " 참가"}
+          </span>
           {isCreator && (
             <button onClick={handleDelete} style={{padding:".35rem .9rem",background:"transparent",border:"1px solid #ff4466",color:"#ff4466",fontFamily:"inherit",fontSize:".7rem",borderRadius:"4px",cursor:"pointer",letterSpacing:".08em",transition:"all .2s"}}>
               방 삭제
