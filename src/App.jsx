@@ -195,8 +195,8 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
 .legend{display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem;font-size:.7rem;color:var(--muted)}.leg-grad{width:80px;height:10px;border-radius:2px;background:linear-gradient(to right,var(--bg3),var(--green))}
 .tab-row{display:flex;gap:.5rem;margin-bottom:.75rem}.tab{padding:.3rem .8rem;background:transparent;border:1px solid var(--border);color:var(--muted);font-family:inherit;font-size:.7rem;border-radius:4px;cursor:pointer;transition:all .2s}.tab.active{border-color:var(--green);color:var(--green);background:var(--green-dim)}
 .pg-nav{display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem}.pg-btn{padding:.25rem .6rem;background:transparent;border:1px solid var(--border);font-family:inherit;font-size:.7rem;border-radius:4px;cursor:pointer;transition:all .2s}.pg-btn:not(:disabled){color:var(--green);border-color:var(--green)}.pg-btn:not(:disabled):hover{background:var(--green-dim)}.pg-btn:disabled{color:var(--muted);cursor:default}.pg-label{font-size:.72rem;color:var(--text);flex:1;text-align:center;letter-spacing:.03em}
-.chat-panel{border-top:1px solid var(--border);background:var(--bg2);position:sticky;bottom:0}.chat-top{padding:.5rem 1.25rem;border-bottom:1px solid var(--border)}.chat-title{font-family:'Orbitron',monospace;font-size:.68rem;color:var(--green);letter-spacing:.15em}
-.chat-msgs{height:140px;overflow-y:auto;padding:.75rem 1.25rem;display:flex;flex-direction:column;gap:.5rem}.chat-msg{font-size:.78rem;line-height:1.5}.chat-msg .au{color:var(--green);margin-right:.4rem}.chat-msg .tm{color:var(--muted);font-size:.65rem;margin-left:.3rem}
+.chat-panel{border-top:1px solid var(--border);background:var(--bg2)}.chat-top{padding:.5rem 1.25rem;border-bottom:1px solid var(--border)}.chat-title{font-family:'Orbitron',monospace;font-size:.68rem;color:var(--green);letter-spacing:.15em}
+.chat-msgs{max-height:200px;overflow-y:auto;padding:.75rem 1.25rem;display:flex;flex-direction:column;gap:.5rem}.chat-msg{font-size:.78rem;line-height:1.5}.chat-msg .au{color:var(--green);margin-right:.4rem}.chat-msg .tm{color:var(--muted);font-size:.65rem;margin-left:.3rem}
 .chat-row{display:flex;border-top:1px solid var(--border)}.chat-in{flex:1;background:var(--bg3);border:none;border-right:1px solid var(--border);padding:.6rem 1rem;color:var(--text);font-family:inherit;font-size:.8rem;outline:none}.chat-in:focus{background:#0f0f22}
 .btn-send{padding:.6rem 1.25rem;background:var(--green);color:#000;font-family:'Orbitron',monospace;font-size:.65rem;font-weight:700;border:none;cursor:pointer;transition:all .2s}.btn-send:hover{box-shadow:0 0 12px var(--green)}
 .ad-slot{width:100%;height:50px;background:transparent;border:1px dashed #1a2a40;border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden}
@@ -750,26 +750,28 @@ function EventRoom({ eventId, nick, onBack }) {
             </>
           )}
         </div>
-      </div>
 
-      <div className="chat-panel">
-        <div className="chat-top"><span className="chat-title">// CHAT</span></div>
-        <div className="chat-msgs">
-          {chats.length===0 ? <div style={{color:"var(--muted)",fontSize:".75rem"}}>대화를 시작해보세요</div>
-            : chats.map((m,i)=>(
-              <div key={i} className="chat-msg">
-                <span className="au">{m.name}</span><span>{m.text}</span>
-                <span className="tm">{fmtTime(new Date(m.created_at).getTime())}</span>
-              </div>
-            ))
-          }
-          <div ref={chatEndRef}/>
+        {/* 채팅 */}
+        <div className="chat-panel" style={{borderRadius:"10px",border:"1px solid var(--border)"}}>
+          <div className="chat-top"><span className="chat-title">// CHAT</span></div>
+          <div className="chat-msgs">
+            {chats.length===0 ? <div style={{color:"var(--muted)",fontSize:".75rem"}}>대화를 시작해보세요</div>
+              : chats.map((m,i)=>(
+                <div key={i} className="chat-msg">
+                  <span className="au">{m.name}</span><span>{m.text}</span>
+                  <span className="tm">{fmtTime(new Date(m.created_at).getTime())}</span>
+                </div>
+              ))
+            }
+            <div ref={chatEndRef}/>
+          </div>
+          <div className="chat-row">
+            <input className="chat-in" placeholder={myName?"메시지 입력...":"먼저 이름을 입력해주세요"} value={chatInput} disabled={!myName}
+              onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSendChat()}/>
+            <button className="btn-send" onClick={handleSendChat} disabled={!myName}>전송</button>
+          </div>
         </div>
-        <div className="chat-row">
-          <input className="chat-in" placeholder={myName?"메시지 입력...":"먼저 이름을 입력해주세요"} value={chatInput} disabled={!myName}
-            onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSendChat()}/>
-          <button className="btn-send" onClick={handleSendChat} disabled={!myName}>전송</button>
-        </div>
+
       </div>
     </div>
   );
