@@ -558,7 +558,19 @@ function EventRoom({ eventId, nick, onBack }) {
     const c = await loadChats(eventId); setChats(c);
   }, [eventId]);
 
-  useEffect(() => { load(); const t=setInterval(load,8000); return ()=>clearInterval(t); }, [load]);
+  useEffect(() => {
+    load();
+    // Realtime 구독 — 폴링 대신 변경사항 있을 때만 받음
+    const eventSub = supabase.channel(`event-${eventId}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'events', filter: `id=eq.${eventId}` },
+        payload => { setEvent(payload.new); })
+      .subscribe();
+    const chatSub = supabase.channel(`chat-${eventId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chats', filter: `event_id=eq.${eventId}` },
+        payload => { setChats(p => [...p, payload.new]); })
+      .subscribe();
+    return () => { supabase.removeChannel(eventSub); supabase.removeChannel(chatSub); };
+  }, [load, eventId]);
   useEffect(() => { chatEndRef.current?.scrollIntoView({behavior:"smooth"}); }, [chats]);
   useEffect(() => {
     if (nick && event && event.participants?.[nick]) setMySlots(new Set(event.participants[nick]));
