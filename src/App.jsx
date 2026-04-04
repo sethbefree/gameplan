@@ -161,13 +161,13 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
 .room-card-title{font-size:.85rem;color:var(--text);margin-bottom:.2rem}.room-card-meta{font-size:.68rem;color:var(--muted)}.room-card-badge{font-size:.7rem;color:var(--green)}
 .dp-btn-new{width:100%;padding:.7rem;background:transparent;border:1px dashed var(--green);color:var(--green);font-family:'Orbitron',monospace;font-size:.7rem;letter-spacing:.08em;border-radius:8px;cursor:pointer;transition:all .2s;margin-top:.5rem}.dp-btn-new:hover{background:var(--green-dim)}
 
-.room{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.room{display:flex;flex-direction:column;min-height:100vh;background:var(--bg)}
 .room-header{padding:.9rem 1.5rem;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;flex-shrink:0}
 .room-title{font-family:'Orbitron',monospace;font-size:1rem;color:var(--green);display:flex;align-items:center;gap:.75rem}
 .live-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite;flex-shrink:0}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 .btn-share{padding:.35rem .9rem;background:transparent;border:1px solid var(--green);color:var(--green);font-family:inherit;font-size:.7rem;border-radius:4px;cursor:pointer;letter-spacing:.08em;transition:all .2s}.btn-share:hover{background:var(--green-dim)}.btn-share.copied{border-color:#00aaff;color:#00aaff}
-.room-content{flex:1;overflow-y:auto;padding:1.25rem;display:flex;flex-direction:column;gap:1.25rem;max-width:900px;width:100%;margin:0 auto}
+.room-content{padding:1.25rem;display:flex;flex-direction:column;gap:1.25rem;max-width:900px;width:100%;margin:0 auto}
 .info-bar{display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding:1rem;background:var(--bg2);border:1px solid var(--border);border-radius:10px}
 .info-col{display:flex;flex-direction:column;gap:.5rem}
 .info-col-r{border-left:1px solid var(--border);padding-left:1rem}
@@ -195,12 +195,12 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
 .legend{display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem;font-size:.7rem;color:var(--muted)}.leg-grad{width:80px;height:10px;border-radius:2px;background:linear-gradient(to right,var(--bg3),var(--green))}
 .tab-row{display:flex;gap:.5rem;margin-bottom:.75rem}.tab{padding:.3rem .8rem;background:transparent;border:1px solid var(--border);color:var(--muted);font-family:inherit;font-size:.7rem;border-radius:4px;cursor:pointer;transition:all .2s}.tab.active{border-color:var(--green);color:var(--green);background:var(--green-dim)}
 .pg-nav{display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem}.pg-btn{padding:.25rem .6rem;background:transparent;border:1px solid var(--border);font-family:inherit;font-size:.7rem;border-radius:4px;cursor:pointer;transition:all .2s}.pg-btn:not(:disabled){color:var(--green);border-color:var(--green)}.pg-btn:not(:disabled):hover{background:var(--green-dim)}.pg-btn:disabled{color:var(--muted);cursor:default}.pg-label{font-size:.72rem;color:var(--text);flex:1;text-align:center;letter-spacing:.03em}
-.chat-panel{border-top:1px solid var(--border);background:var(--bg2);flex-shrink:0}.chat-top{padding:.5rem 1.25rem;border-bottom:1px solid var(--border)}.chat-title{font-family:'Orbitron',monospace;font-size:.68rem;color:var(--green);letter-spacing:.15em}
+.chat-panel{border-top:1px solid var(--border);background:var(--bg2);position:sticky;bottom:0}.chat-top{padding:.5rem 1.25rem;border-bottom:1px solid var(--border)}.chat-title{font-family:'Orbitron',monospace;font-size:.68rem;color:var(--green);letter-spacing:.15em}
 .chat-msgs{height:140px;overflow-y:auto;padding:.75rem 1.25rem;display:flex;flex-direction:column;gap:.5rem}.chat-msg{font-size:.78rem;line-height:1.5}.chat-msg .au{color:var(--green);margin-right:.4rem}.chat-msg .tm{color:var(--muted);font-size:.65rem;margin-left:.3rem}
 .chat-row{display:flex;border-top:1px solid var(--border)}.chat-in{flex:1;background:var(--bg3);border:none;border-right:1px solid var(--border);padding:.6rem 1rem;color:var(--text);font-family:inherit;font-size:.8rem;outline:none}.chat-in:focus{background:#0f0f22}
 .btn-send{padding:.6rem 1.25rem;background:var(--green);color:#000;font-family:'Orbitron',monospace;font-size:.65rem;font-weight:700;border:none;cursor:pointer;transition:all .2s}.btn-send:hover{box-shadow:0 0 12px var(--green)}
-.ad-slot{width:100%;height:60px;background:var(--bg2);border:1px dashed #1a2a40;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-top:1rem;overflow:hidden}
-.ad-label{font-size:.65rem;color:#1a2a40;letter-spacing:.15em;font-family:'Orbitron',monospace}
+.ad-slot{width:100%;height:50px;background:transparent;border:1px dashed #1a2a40;border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.ad-label{font-size:.6rem;color:#1a2a40;letter-spacing:.15em;font-family:'Orbitron',monospace}
 .center-msg{display:flex;align-items:center;justify-content:center;height:100vh;font-family:'Orbitron',monospace;color:var(--green);font-size:1rem;letter-spacing:.1em;background:var(--bg)}
 .no-event{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;gap:1rem;font-family:'Orbitron',monospace;color:#ff4466;background:var(--bg)}
 
@@ -697,7 +697,7 @@ function EventRoom({ eventId, nick, onBack }) {
         </div>
 
         {/* 광고 영역 */}
-        <div className="ad-slot">
+        <div className="ad-slot" style={{marginTop:"0"}}>
           <span className="ad-label">AD</span>
         </div>
 
