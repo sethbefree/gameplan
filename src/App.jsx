@@ -25,6 +25,19 @@ function getDeviceId() {
   if (!id) { id = genId() + genId(); localStorage.setItem("gp_device_id", id); }
   return id;
 }
+function saveRoomToHistory(id, title) {
+  const history = JSON.parse(localStorage.getItem("gp_rooms") || "[]");
+  const filtered = history.filter(r => r.id !== id);
+  const updated = [{ id, title, ts: Date.now() }, ...filtered].slice(0, 20);
+  localStorage.setItem("gp_rooms", JSON.stringify(updated));
+}
+function getRoomHistory() {
+  return JSON.parse(localStorage.getItem("gp_rooms") || "[]");
+}
+function removeRoomFromHistory(id) {
+  const history = getRoomHistory().filter(r => r.id !== id);
+  localStorage.setItem("gp_rooms", JSON.stringify(history));
+}
 
 // ─── Supabase ─────────────────────────────────────────────────────────────────
 async function loadEvent(id) {
@@ -199,6 +212,12 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
 .chat-msgs{max-height:200px;overflow-y:auto;padding:.75rem 1.25rem;display:flex;flex-direction:column;gap:.5rem}.chat-msg{font-size:.78rem;line-height:1.5}.chat-msg .au{color:var(--green);margin-right:.4rem}.chat-msg .tm{color:var(--muted);font-size:.65rem;margin-left:.3rem}
 .chat-row{display:flex;border-top:1px solid var(--border)}.chat-in{flex:1;background:var(--bg3);border:none;border-right:1px solid var(--border);padding:.6rem 1rem;color:var(--text);font-family:inherit;font-size:.8rem;outline:none}.chat-in:focus{background:#0f0f22}
 .btn-send{padding:.6rem 1.25rem;background:var(--green);color:#000;font-family:'Orbitron',monospace;font-size:.65rem;font-weight:700;border:none;cursor:pointer;transition:all .2s}.btn-send:hover{box-shadow:0 0 12px var(--green)}
+.cell-popup{background:var(--bg2);border:1px solid var(--green);border-radius:8px;padding:.75rem 1rem;margin-bottom:.75rem;min-width:160px}
+.cell-popup-header{font-size:.72rem;color:var(--green);font-family:'Orbitron',monospace;letter-spacing:.06em;margin-bottom:.6rem;padding-bottom:.5rem;border-bottom:1px solid var(--border)}
+.cell-popup-name{display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:var(--text);padding:.2rem 0}
+.cell-popup-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 4px var(--green);flex-shrink:0}
+.cell-popup-empty{font-size:.72rem;color:var(--muted);padding:.2rem 0}
+.cell-popup-total{font-size:.65rem;color:var(--muted);margin-top:.5rem;padding-top:.4rem;border-top:1px solid var(--border)}
 .ad-slot{width:100%;height:50px;background:transparent;border:1px dashed #1a2a40;border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .ad-label{font-size:.6rem;color:#1a2a40;letter-spacing:.15em;font-family:'Orbitron',monospace}
 .center-msg{display:flex;align-items:center;justify-content:center;height:100vh;font-family:'Orbitron',monospace;color:var(--green);font-size:1rem;letter-spacing:.1em;background:var(--bg)}
@@ -215,6 +234,7 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
 
 // ─── Grid Table ───────────────────────────────────────────────────────────────
 function GridTable({ useDates, hours, mySlots, participants, pNames, total, onCellClick, isMine }) {
+  const [popup, setPopup] = useState(null); // {date, hour, names}
   const heatVal = (date, hour) => pNames.filter(n => participants[n]?.includes(slotId(date, hour))).length;
   const heatColor = v => {
     if (v === 0 || total === 0) return "var(--bg3)";
@@ -224,7 +244,24 @@ function GridTable({ useDates, hours, mySlots, participants, pNames, total, onCe
     return `rgba(0,255,136,${0.55+r*0.4})`;
   };
   return (
-    <div className="grid-scroll">
+    <div className="grid-scroll" onClick={e => { if (e.target.closest(".cell-popup")) return; setPopup(null); }}>
+      {popup && (
+        <div className="cell-popup">
+          <div className="cell-popup-header">
+            {fmtDate(popup.date).month}/{fmtDate(popup.date).date} ({fmtDate(popup.date).day}) {fmtHour(popup.hour)}
+          </div>
+          {popup.names.length === 0
+            ? <div className="cell-popup-empty">가능한 사람 없음</div>
+            : popup.names.map(n => (
+              <div key={n} className="cell-popup-name">
+                <span className="cell-popup-dot" />
+                {n}
+              </div>
+            ))
+          }
+          <div className="cell-popup-total">{popup.names.length} / {total}명 가능</div>
+        </div>
+      )}
       <table className="g-table">
         <thead><tr>
           <th className="g-th" />
@@ -249,7 +286,9 @@ function GridTable({ useDates, hours, mySlots, participants, pNames, total, onCe
                 if (isMine) return <td key={d} className={`g-td${mySlots.has(id)?" mine":""}${past?" past-col":""}`} onClick={() => !past && onCellClick && onCellClick(d,h)} />;
                 const v = heatVal(d,h);
                 const names = pNames.filter(n => participants[n]?.includes(id));
-                return <td key={d} className={`g-td-heat${past?" past-col":""}`} style={{background:heatColor(v)}} title={v>0?`${v}명: ${names.join(", ")}`:""}>
+                return <td key={d} className={`g-td-heat${past?" past-col":""}`}
+                  style={{background:heatColor(v), cursor: v>0?"pointer":"default"}}
+                  onClick={() => !past && setPopup(p => p?.date===d&&p?.hour===h ? null : {date:d, hour:h, names})}>
                   {v>0 && <span style={{color:v/total>0.5?"#000a":"#fff6"}}>{v}</span>}
                 </td>;
               })}
@@ -308,6 +347,7 @@ function MainView({ nick, onEnterRoom, onCreated, onChangeNick, initialView }) {
   const [loadingDate, setLoadingDate] = useState(false);
   const [totalRooms, setTotalRooms] = useState(null);
   const [createDateMap, setCreateDateMap] = useState({});
+  const [myRooms, setMyRooms] = useState(() => getRoomHistory());
 
   useEffect(() => {
     supabase.from("events").select("id", { count: "exact", head: true })
@@ -353,7 +393,7 @@ function MainView({ nick, onEnterRoom, onCreated, onChangeNick, initialView }) {
     const id = genId();
     const ok = await createEvent({ id, title:title.trim(), dates:selDates,
       hours:Array.from({length:endH-startH},(_,i)=>startH+i), participants:{}, webhook:webhook.trim(), created_by:getDeviceId() });
-    if (ok) { setTotalRooms(n => (n||0) + 1); onCreated(id); }
+    if (ok) { setTotalRooms(n => (n||0) + 1); saveRoomToHistory(id, title.trim()); setMyRooms(getRoomHistory()); onCreated(id); }
     else { setErr("생성 실패. Supabase 연결을 확인해주세요."); setCreating(false); }
   };
 
@@ -395,6 +435,33 @@ function MainView({ nick, onEnterRoom, onCreated, onChangeNick, initialView }) {
 
       {view === "create" && (
         <div className="create-view">
+          {/* 내 방 목록 */}
+          {myRooms.length > 0 && (
+            <div className="c-card" style={{marginBottom:"1rem",maxWidth:"560px",width:"100%"}}>
+              <div className="s-title" style={{marginBottom:".75rem"}}>내 방 목록</div>
+              <div style={{display:"flex",flexDirection:"column",gap:".4rem"}}>
+                {myRooms.map(r => (
+                  <div key={r.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:".5rem .75rem",background:"var(--bg3)",border:"1px solid var(--border)",borderRadius:"6px",cursor:"pointer",transition:"all .2s"}}
+                    onClick={()=>onEnterRoom(r.id)}
+                    onMouseOver={e=>e.currentTarget.style.borderColor="var(--green)"}
+                    onMouseOut={e=>e.currentTarget.style.borderColor="var(--border)"}>
+                    <div>
+                      <div style={{fontSize:".82rem",color:"var(--text)"}}>{r.title}</div>
+                      <div style={{fontSize:".65rem",color:"var(--muted)",marginTop:"2px"}}>
+                        {new Date(r.ts).toLocaleDateString("ko-KR")}
+                      </div>
+                    </div>
+                    <div style={{display:"flex",alignItems:"center",gap:".5rem"}}>
+                      <span style={{fontSize:".7rem",color:"var(--green)"}}>입장 →</span>
+                      <span style={{fontSize:".65rem",color:"var(--muted)",cursor:"pointer",padding:"2px 6px",border:"1px solid var(--border)",borderRadius:"3px"}}
+                        onClick={e=>{e.stopPropagation();removeRoomFromHistory(r.id);setMyRooms(getRoomHistory());}}>✕</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="c-card">
             <div className="c-logo" style={{fontSize:"1.5rem",marginBottom:".25rem"}}>새 방 만들기</div>
             <div className="c-sub" style={{marginBottom:"1.5rem"}}>// 날짜와 시간을 설정하고 링크를 공유하세요</div>
@@ -583,6 +650,7 @@ function EventRoom({ eventId, nick, onBack }) {
     const n=nameInput.trim(); if(!n) return; setMyName(n);
     if (event?.participants?.[n]) setMySlots(new Set(event.participants[n]));
     await notifyDiscord(event?.webhook,event?.title,n,"join",0);
+    saveRoomToHistory(eventId, event?.title || "");
   };
   const toggleSlot = (date,hour) => {
     if (!myName) return; const id=slotId(date,hour);
@@ -614,7 +682,7 @@ function EventRoom({ eventId, nick, onBack }) {
   const handleDelete = async () => {
     if (!window.confirm(`"${event?.title}" 방을 삭제할까요? 복구할 수 없어요.`)) return;
     const ok = await deleteEvent(eventId);
-    if (ok) onBack();
+    if (ok) { removeRoomFromHistory(eventId); onBack(); }
   };
   const handleSaveWebhook = async () => {
     setSavingWebhook(true);
