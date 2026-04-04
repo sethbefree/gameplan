@@ -199,6 +199,8 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
 .chat-msgs{height:140px;overflow-y:auto;padding:.75rem 1.25rem;display:flex;flex-direction:column;gap:.5rem}.chat-msg{font-size:.78rem;line-height:1.5}.chat-msg .au{color:var(--green);margin-right:.4rem}.chat-msg .tm{color:var(--muted);font-size:.65rem;margin-left:.3rem}
 .chat-row{display:flex;border-top:1px solid var(--border)}.chat-in{flex:1;background:var(--bg3);border:none;border-right:1px solid var(--border);padding:.6rem 1rem;color:var(--text);font-family:inherit;font-size:.8rem;outline:none}.chat-in:focus{background:#0f0f22}
 .btn-send{padding:.6rem 1.25rem;background:var(--green);color:#000;font-family:'Orbitron',monospace;font-size:.65rem;font-weight:700;border:none;cursor:pointer;transition:all .2s}.btn-send:hover{box-shadow:0 0 12px var(--green)}
+.ad-slot{width:100%;height:60px;background:var(--bg2);border:1px dashed #1a2a40;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-top:1rem;overflow:hidden}
+.ad-label{font-size:.65rem;color:#1a2a40;letter-spacing:.15em;font-family:'Orbitron',monospace}
 .center-msg{display:flex;align-items:center;justify-content:center;height:100vh;font-family:'Orbitron',monospace;color:var(--green);font-size:1rem;letter-spacing:.1em;background:var(--bg)}
 .no-event{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;gap:1rem;font-family:'Orbitron',monospace;color:#ff4466;background:var(--bg)}
 
@@ -457,6 +459,11 @@ function MainView({ nick, onEnterRoom, onCreated, onChangeNick, initialView }) {
 
             {err && <div className="error-msg">{err}</div>}
             <button className="btn-make" onClick={create} disabled={creating}>{creating?"CREATING...":"방 만들기 →"}</button>
+
+            {/* 광고 영역 */}
+            <div className="ad-slot">
+              <span className="ad-label">AD</span>
+            </div>
           </div>
         </div>
       )}
@@ -581,7 +588,13 @@ function EventRoom({ eventId, nick, onBack }) {
     const c=await loadChats(eventId); setChats(c);
   };
   const copyLink = () => {
-    navigator.clipboard.writeText(window.location.href).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});
+    const url = window.location.href;
+    const shareData = { title: `GAMEPLAN · ${event?.title}`, text: "가능한 시간 알려줘!", url };
+    if (navigator.share) {
+      navigator.share(shareData).catch(()=>{});
+    } else {
+      navigator.clipboard.writeText(url).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});
+    }
   };
   const handleDelete = async () => {
     if (!window.confirm(`"${event?.title}" 방을 삭제할까요? 복구할 수 없어요.`)) return;
@@ -627,7 +640,9 @@ function EventRoom({ eventId, nick, onBack }) {
               방 삭제
             </button>
           )}
-          <button className={`btn-share${copied?" copied":""}`} onClick={copyLink}>{copied?"COPIED ✓":"링크 복사"}</button>
+          <button className={`btn-share${copied?" copied":""}`} onClick={copyLink}>
+            {copied ? "COPIED ✓" : navigator.share ? "공유하기" : "링크 복사"}
+          </button>
         </div>
       </div>
 
@@ -667,6 +682,11 @@ function EventRoom({ eventId, nick, onBack }) {
               }
             </div>
           </div>
+        </div>
+
+        {/* 광고 영역 */}
+        <div className="ad-slot">
+          <span className="ad-label">AD</span>
         </div>
 
         {/* 탭 + 그리드 */}
