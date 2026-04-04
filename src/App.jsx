@@ -549,6 +549,9 @@ function EventRoom({ eventId, nick, onBack }) {
   const [tab,setTab]=useState("heat"); const [chatInput,setChatInput]=useState("");
   const [heatPage,setHeatPage]=useState(0); const [minePage,setMinePage]=useState(0);
   const [notFound,setNotFound]=useState(false);
+  const [showSettings,setShowSettings]=useState(false);
+  const [webhookInput,setWebhookInput]=useState("");
+  const [savingWebhook,setSavingWebhook]=useState(false);
   const PAGE_SIZE=7; const chatEndRef=useRef(null);
 
   const load = useCallback(async () => {
@@ -613,6 +616,12 @@ function EventRoom({ eventId, nick, onBack }) {
     const ok = await deleteEvent(eventId);
     if (ok) onBack();
   };
+  const handleSaveWebhook = async () => {
+    setSavingWebhook(true);
+    const { error } = await supabase.from("events").update({ webhook: webhookInput.trim() }).eq("id", eventId);
+    if (!error) { setEvent(e=>({...e,webhook:webhookInput.trim()})); setShowSettings(false); }
+    setSavingWebhook(false);
+  };
   const handleAddHour = async (direction) => {
     if (!isCreator) return;
     const cur = event.hours || [];
@@ -652,11 +661,46 @@ function EventRoom({ eventId, nick, onBack }) {
               방 삭제
             </button>
           )}
+          {isCreator && (
+            <button onClick={()=>{setWebhookInput(event.webhook||"");setShowSettings(true);}}
+              style={{padding:".35rem .9rem",background:"transparent",border:"1px solid var(--muted)",color:"var(--muted)",fontFamily:"inherit",fontSize:".7rem",borderRadius:"4px",cursor:"pointer",transition:"all .2s"}}>
+              ⚙ 설정
+            </button>
+          )}
           <button className={`btn-share${copied?" copied":""}`} onClick={copyLink}>
             {copied ? "COPIED ✓" : navigator.share ? "공유하기" : "링크 복사"}
           </button>
         </div>
       </div>
+
+      {/* 설정 모달 */}
+      {showSettings && (
+        <div style={{position:"fixed",inset:0,background:"#000000aa",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:"1rem"}}>
+          <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:"12px",padding:"1.5rem",width:"100%",maxWidth:"440px"}}>
+            <div style={{fontFamily:"'Orbitron',monospace",fontSize:".9rem",color:"var(--green)",marginBottom:"1.25rem",letterSpacing:".06em"}}>⚙ 방 설정</div>
+            <div style={{fontSize:".7rem",color:"var(--green)",letterSpacing:".12em",marginBottom:".5rem"}}>DISCORD 웹훅 URL</div>
+            <input
+              style={{width:"100%",background:"var(--bg3)",border:"1px solid var(--border)",borderRadius:"6px",padding:".7rem 1rem",color:"var(--text)",fontFamily:"inherit",fontSize:".85rem",outline:"none",marginBottom:".5rem"}}
+              placeholder="웹훅 URL 붙여넣기..."
+              value={webhookInput}
+              onChange={e=>setWebhookInput(e.target.value)}
+            />
+            <div style={{fontSize:".65rem",color:"var(--muted)",marginBottom:"1.25rem"}}>
+              디스코드 채널 설정 → 연동 → 웹후크 → 새 웹후크 → URL 복사
+            </div>
+            <div style={{display:"flex",gap:".75rem"}}>
+              <button onClick={()=>setShowSettings(false)}
+                style={{flex:1,padding:".7rem",background:"transparent",border:"1px solid var(--border)",color:"var(--muted)",fontFamily:"inherit",fontSize:".8rem",borderRadius:"6px",cursor:"pointer"}}>
+                취소
+              </button>
+              <button onClick={handleSaveWebhook} disabled={savingWebhook}
+                style={{flex:1,padding:".7rem",background:"var(--green)",border:"none",color:"#000",fontFamily:"'Orbitron',monospace",fontWeight:"700",fontSize:".75rem",borderRadius:"6px",cursor:"pointer",letterSpacing:".05em"}}>
+                {savingWebhook?"저장 중...":"저장"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 단일 컬럼 스크롤 영역 */}
       <div className="room-content">
